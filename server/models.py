@@ -57,15 +57,15 @@ class Camper(db.Model, SerializerMixin):
     
     @validates('age')
     def validates_age(self, key, age):
-        if not 8 > age > 10:
-            raise ValueError("Fuck is you doing dawg?!?!")
-        return age
-    
-        # print('Inside the age validation')
-        # if not 8 <= age <= 18: 
-        #     print('Invalid!!')
-        #     raise ValueError("Age must be 8 to 18")
+        # if not 8 >= age >= 10:
+        #     raise ValueError("Fuck is you doing dawg?!?!")
         # return age
+    
+        print('Inside the age validation')
+        if not 8 <= age <= 18: 
+            print('Invalid!!')
+            raise ValueError("Age must be 8 to 18")
+        return age
         
     # bidimensional Relationship
     signup = db.relationship('Signup', back_populates='camper')
@@ -100,13 +100,13 @@ class Signup(db.Model, SerializerMixin):
     
     @validates('time')
     def validates_time(self, key, time):
-        if time > 23:
-            raise ValueError("Make it longer or Shorter HURRY UP!!!")
-        return time
-    
-        # if not 0 <= time <= 23:
-        #     raise ValueError("Time must be within limits")
+        # if time > 23:
+        #     raise ValueError("Make it longer or Shorter HURRY UP!!!")
         # return time
+    
+        if not 0 <= time <= 23:
+            raise ValueError("Time must be within limits")
+        return time
     
     def __repr__(self):
         return f'<Signup {self.id}>'

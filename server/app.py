@@ -8,7 +8,7 @@ from flask import Flask, make_response, jsonify, request
 from flask_migrate import Migrate
 from flask_restful import Api, Resource
 
-from models import db, Activity, Camper
+from models import db, Activity, Camper, Signup
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE
@@ -109,27 +109,26 @@ class ActivitiesID(Resource):
             # return just has to be a object
             return {}, 204
         except:
-            return {"error": "404: Activity not found"}, 400
+            return {"error": "404: Activity not found"}, 404
         
 api.add_resource(ActivitiesID, '/activities/<int:id>')
 
-class Signup(Resource):
+class Signups(Resource):
     # POST
     def post(self):
         try:
             data = request.get_json()
             new_Signup = Signup(
-                time=data['time'],
-                camper_id=data['camper_id'],
-                activity_id=data['activity_id']
+                time=data.get('time'),
+                camper_id=data.get('camper_id'),
+                activity_id=data.get('activity_id')
             )
             db.session.add(new_Signup)
             db.session.commit()
-            # Why??? 
-            return new_Signup.activity.to_dict(), 201
+            return new_Signup.to_dict(), 201
         except:
             return {"error": "400: Validation error"}, 400
-api.add_resource(Signup, '/signups')
+api.add_resource(Signups, '/signups')
 
 # data = request.get_json()
 # use a .get after when grabbing data
