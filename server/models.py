@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import MetaData, ForeignKey
+from sqlalchemy import MetaData
 from sqlalchemy.orm import validates
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy_serializer import SerializerMixin
@@ -22,16 +22,11 @@ class Activity(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     difficulty = db.Column(db.Integer)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-    updated_at = db.Column(db.DateTime, onupdate=db.func.now())
     
-    # bidimensional relationship
-    signup = db.relationship('Signup', cascade="all,delete",back_populates='activity')
-    
-    # signups = db.relationship("Signup", cascade="all,delete", backref= "activity")
-    
-    serialize_only = ("id", "name", "difficulty")
+    signups = db.relationship("Signup", cascade="all,delete", backref= "activity")
 
+    serialize_only = ("id", "name", "difficulty")
+    
     def __repr__(self):
         return f'<Activity {self.id}: {self.name}>'
 
@@ -41,41 +36,29 @@ class Camper(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
     age = db.Column(db.Integer)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-    updated_at = db.Column(db.DateTime, onupdate=db.func.now())
+    
+    signups = db.relationship("Signup", backref= "camper")
+    
+    activities = association_proxy("signups", "activity")
+
+    serialize_rules = ("-signups.camper",)
     
     @validates('name')
     def validate_name(self, key, name):
-        # names = db.session.query(Camper.name).all()
-        # if not name:
-        #     raise ValueError('What you saying Dawg?')
-        # return name 
-    
+        print('Inside the name validation')
         if not name or len(name) < 1: 
             raise ValueError("Name must exist")
+
         return name
     
     @validates('age')
-    def validates_age(self, key, age):
-        if not 8 > age > 10:
-            raise ValueError("Fuck is you doing dawg?!?!")
-        return age
-    
-        # print('Inside the age validation')
-        # if not 8 <= age <= 18: 
-        #     print('Invalid!!')
-        #     raise ValueError("Age must be 8 to 18")
-        # return age
+    def validate_age(self, key, age):
+        print('Inside the age validation')
+        if not 8 <= age <= 18: 
+            print('Invalid!!')
+            raise ValueError("Age must be 8 to 18")
         
-    # bidimensional Relationship
-    signup = db.relationship('Signup', back_populates='camper')
-    # Both can work but would have to alter signups
-    # signup = db.relationship("Signup", backref= "camper")
-
-    serialize_rules = ("-signup.camper",)
-    
-    # needed for  if you require more advanced functionality, such as custom calculations, encapsulation of logic, or a consistent API for accessing related data, 
-    activities = association_proxy("signups", "activity")
+        return age
     
     def __repr__(self):
         return f'<Camper {self.id}: {self.name}>'
@@ -84,33 +67,22 @@ class Signup(db.Model, SerializerMixin):
     __tablename__ = 'signups'
 
     id = db.Column(db.Integer, primary_key=True)
-    
-    # Bidimensional Relationship
-    camper_id = db.Column('Camper', ForeignKey('campers.id')) 
-    camper = db.relationship('Camper', back_populates='signup')
-    activity_id = db.Column('Activity', ForeignKey('activities.id'))
-    activity = db.relationship('Activity', back_populates='signup') 
-    
     time = db.Column(db.Integer)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-    updated_at = db.Column(db.DateTime, onupdate=db.func.now())
     
-    # Reason :
-    serialize_rules = ("-camper.signup","-activity.signup")
+    camper_id = db.Column(db.Integer, db.ForeignKey("campers.id"))
+    activity_id = db.Column(db.Integer, db.ForeignKey("activities.id"))
+    
+    serialize_rules = ("-camper.signups", "-activity.signups")
     
     @validates('time')
-    def validates_time(self, key, time):
-        if time > 23:
-            raise ValueError("Make it longer or Shorter HURRY UP!!!")
+    def validate_time(self, key, time):
+        
+        if not 0 <= time <= 23:
+            raise ValueError("Time must be within limits")
         return time
-    
-        # if not 0 <= time <= 23:
-        #     raise ValueError("Time must be within limits")
-        # return time
-    
+
     def __repr__(self):
         return f'<Signup {self.id}>'
-
 
 ############################ Serialize notes ######################
     # Reason for only: serialize_only attribute is to specify which attributes of the Activity model should be included when serializing an instance of the model into a JSON or another serialized format. By defining serialize_only with a tuple of attribute names, you are instructing the serialization process to include only those attributes in the serialized output.
