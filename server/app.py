@@ -99,6 +99,7 @@ class ActivitiesID(Resource):
 #             return activity.to_dict(), 202
 #         except:
 #             raise Exception("error")
+
     def delete(self, id):
         try:
             # del_signup = Signup.query.filter_by(id=id).first()
